@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -8,8 +7,7 @@ namespace Desafio2
 {
     public class UserInterface
     {
-        // Input Validation object
-        private readonly Data _data;
+        private Data _data = new();
 
         private static readonly string[] messages =
         {
@@ -30,18 +28,41 @@ namespace Desafio2
             .Zip(actions)
             .Select((a, b) => (a.First, a.Second, b));
 
-        public void Menu()
+        // EXCEPTION
+        public void Start()
         {
-            while(true)
+            Task writeTask = null;
+            while (true)
             {
+                writeTask?.Wait();
                 if (Read())
                 {
-                    Process();
-                    Write();
+                    var processTask = Process();
+
+                    writeTask = Loading(processTask)
+                        .ContinueWith(_ => 
+                        {
+                            if (!processTask.IsFaulted)
+                            {
+                                Write();
+                            }
+                            _data = new(); 
+                        });
                 }
                 else
                     break;
             }
+            //while (true)
+            //{
+            //    if (Read())
+            //    {
+            //        Process();
+            //        Write(); 
+            //        _data = new();
+            //    }
+            //    else
+            //        break;
+            //}
         }
 
         private bool Read()
@@ -74,23 +95,69 @@ namespace Desafio2
             return true;
         }
 
-        private async void Process()
+        // TODO: Better Animation
+        private static async Task Loading(Task until)
         {
-            Request.Result res = await Request.MakeRequest(_data.MoedaOrigem, _data.MoedaDestino, _data.Valor);
-
-            if (res.Sucesso)
-            {
-                _data.Resultado = res.Resultado;
-                _data.Taxa = res.Info.Rate;
+            Console.Write("Executando");
+            while (true)
+            { 
+                await Task.Delay(100).ContinueWith(_ => Console.Write('.'));
+                if (until.IsCompleted)
+                {
+                    Console.WriteLine();
+                    break;
+                }
             }
-            else
-                throw new Exception("Erro ao converter as moedas");
-              
         }
+        private async Task Process()
+        {
+            try
+            {
+                Request.Result res = await Request.MakeRequest(_data.MoedaOrigem, _data.MoedaDestino, _data.Valor);
+                // REDO
+                _data.Resultado = res.Resultado?.ToString();
+                _data.Taxa = res.Info.Rate?.ToString();
+            }
+            catch(ArgumentException e)
+            {
+                // TODO
+                Console.WriteLine(e.Message);
+                throw;
+            }
+            catch (Exception e)
+            {
+                Console.Error.WriteLine(e);
+                throw;
+            }
+            return;
+
+        }
+
+        //private void Process()
+        //{
+        //    try
+        //    {
+        //        Request.Result res = Request.MakeRequest(_data.MoedaOrigem, _data.MoedaDestino, _data.Valor).Result;
+        //        _data.Resultado = res.Resultado?.ToString();
+        //        _data.Taxa = res.Info.Rate.ToString();
+        //    }
+        //    catch(ArgumentException e)
+        //    {
+        //        Console.WriteLine(e.Message);
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        Console.Error.WriteLine(e);
+        //        throw;
+        //    }
+        //    return;
+
+        //}
 
         private void Write()
         {
-            Console.WriteLine($"{_data.MoedaOrigem} {_data.Valor} => {_data.MoedaDestino} {_data.Resultado}\n Taxa: {_data.Taxa}");
+            string border = new('-', 50);
+            Console.WriteLine($"{border}\n{_data.MoedaOrigem} {_data.Valor} => {_data.MoedaDestino} {_data.Resultado}\nTaxa: {_data.Taxa}\n{border}");
         }
     }
 }

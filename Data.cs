@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Desafio2
 {
@@ -27,7 +23,7 @@ namespace Desafio2
                     throw new ArgumentException("Moeda destino e moeda origem devem ser diferentes");
 
                 if (IsValidMoeda(value))
-                    _moedaOrigem = value;
+                    _moedaOrigem = value.ToUpper();
                 else
                     throw new ArgumentException("Moeda informada não possui 3 caracteres");
             }
@@ -43,12 +39,12 @@ namespace Desafio2
                     throw new ArgumentException("Moeda destino e moeda origem devem ser diferentes");
 
                 if (IsValidMoeda(value))
-                    _moedaDestino = value;
+                    _moedaDestino = value.ToUpper();
                 else
                     throw new ArgumentException("Moeda informada não possui 3 caracteres");
             }
         }
-
+        // FLOAT?
         public string Valor { 
             get => FormatCurrency(_valor);
 
@@ -58,7 +54,7 @@ namespace Desafio2
             } 
         
         }
-
+        // FLOAT?
         public string Resultado 
         {
             get => FormatCurrency(_resultado);
@@ -68,7 +64,7 @@ namespace Desafio2
                 _resultado = GetCurrency(value);
             }
         }
-
+        // FLOAT?
         public string Taxa
         {
             get => _taxa.ToString("n6");
@@ -103,6 +99,6 @@ namespace Desafio2
             throw new ArgumentException("Valor informado não possui formato válido.");
         }
 
-        private static string FormatCurrency(float value) => value.ToString("c2");
+        private static string FormatCurrency(float value) => value.ToString("0.00");
     }
 }
