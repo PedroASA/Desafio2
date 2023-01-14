@@ -13,7 +13,7 @@ namespace Desafio2
         private readonly static HttpClient Client;
         private static readonly string Uri = "https://api.exchangerate.host/convert?";
 
-        private readonly static string[] Params = { "from", "to", "amount" };
+        private readonly static string[] Params = { "from", "to", "amount", "places" };
 
         // Construtor de Classe
         static Request()
@@ -22,10 +22,10 @@ namespace Desafio2
             Client.DefaultRequestHeaders.Accept.Clear();
         }
 
-        public static async Task<Result> MakeRequest(string origem, string destino, float valor)
+        public static async Task<Result> MakeRequest(string origem, string destino, float valor, uint casasDecimais)
         {
             await using Stream stream =
-            await Client.GetStreamAsync($"{Uri}{Params[0]}={origem}&{Params[1]}={destino}&{Params[2]}={valor}");
+            await Client.GetStreamAsync($"{Uri}{Params[0]}={origem}&{Params[1]}={destino}&{Params[2]}={valor}&{Params[3]}={casasDecimais}");
 
             var result = await JsonSerializer.DeserializeAsync<Result>(stream);
 

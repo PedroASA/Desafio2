@@ -5,6 +5,8 @@ namespace Desafio2
 {
     public class Conversao
     {
+        public const uint CasasDecimais = 2;
+
         // Backing Fields
         private string _moedaOrigem;
         private string _moedaDestino;

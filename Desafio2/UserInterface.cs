@@ -94,7 +94,7 @@ namespace Desafio2
             {
                 try
                 {
-                    Request.Result res = await Request.MakeRequest(conversao.MoedaOrigem, conversao.MoedaDestino, conversao.Valor);
+                    Request.Result res = await Request.MakeRequest(conversao.MoedaOrigem, conversao.MoedaDestino, conversao.Valor, Conversao.CasasDecimais);
                     conversao.SetResultado(res.Resultado);
                     conversao.SetTaxa(res.Info.Rate);
                 }
