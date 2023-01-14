@@ -14,11 +14,11 @@ namespace Desafio2
         // Método Principal
         public async Task Start()
         {
-            var tokenSource = new CancellationTokenSource();
-            var token = tokenSource.Token;
-
             while (true)
             {
+                var tokenSource = new CancellationTokenSource();
+                var token = tokenSource.Token;
+
                 // Ler Entradas
                 if (Read())
                 {
