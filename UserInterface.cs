@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Desafio2
@@ -13,6 +14,8 @@ namespace Desafio2
         // Método Principal
         public async Task Start()
         {
+            var tokenSource = new CancellationTokenSource();
+            var token = tokenSource.Token;
 
             while (true)
             {
@@ -20,10 +23,10 @@ namespace Desafio2
                 if (Read())
                 {
                     // Processar dados lidos
-                    var processTask = Process();
+                    var processTask = Process(tokenSource);
 
                     // Imprime no Console enquanto o método "Process()" não acaba
-                    var loadTask = Loading(processTask);
+                    var loadTask = Loading(token);
 
                     try
                     {
@@ -67,14 +70,17 @@ namespace Desafio2
 
 
         // Imprime no Console enquanto a tarefa "until" não acaba
-        private static async Task Loading(Task until)
+        private static async Task Loading(CancellationToken ct)
         {
             Console.Write("Executando");
             while (true)
             {
-                // Imprime no Console a cada 100 milisegundos
-                await Task.Delay(100).ContinueWith(_ => Console.Write('.'));
-                if (until.IsCompleted)
+                try
+                {
+                    // Imprime no Console a cada 100 milisegundos
+                    await Task.Delay(100, ct).ContinueWith(_ => Console.Write('.'), ct);
+                }
+                catch(Exception)
                 {
                     Console.WriteLine();
                     break;
@@ -82,26 +88,33 @@ namespace Desafio2
             }
         }
         // Obtem Resultado e Taxa por meio da classe Request
-        private async Task Process()
+        private async Task Process(CancellationTokenSource cts)
         {
             try
             {
-                Request.Result res = await Request.MakeRequest(conversao.MoedaOrigem, conversao.MoedaDestino, conversao.Valor);
-                conversao.SetResultado(res.Resultado);
-                conversao.SetTaxa(res.Info.Rate);
+                try
+                {
+                    Request.Result res = await Request.MakeRequest(conversao.MoedaOrigem, conversao.MoedaDestino, conversao.Valor);
+                    conversao.SetResultado(res.Resultado);
+                    conversao.SetTaxa(res.Info.Rate);
+                }
+                finally
+                {
+                    cts.Cancel();
+                }
             }
             // Erro Esperado, i.e, o Resultado e/ou a Taxa passadas não são válidos
-            catch(ArgumentException e)
+            catch (ArgumentException e)
             {
-                Console.WriteLine($"Falha ao converter {conversao.Valor} de {conversao.MoedaOrigem} para {conversao.MoedaDestino}\n" + e.Message);
+                Console.WriteLine($"Falha ao converter {Conversao.FormatValor(conversao.Valor)} de {conversao.MoedaOrigem} para {conversao.MoedaDestino}\n" + e.Message);
                 throw;
             }
-            catch(System.Net.Http.HttpRequestException e)
+            catch (System.Net.Http.HttpRequestException e)
             {
                 Console.WriteLine("Falha ao se comunicar com a API\nCódigo de Resposta HTTP: " + e.StatusCode);
                 throw;
             }
-            catch(JsonException)
+            catch (JsonException)
             {
                 Console.WriteLine("Falha ao ler a resposta da API\nJson não pode ser desserializado");
                 throw;
