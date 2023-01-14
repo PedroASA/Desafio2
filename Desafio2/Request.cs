@@ -29,8 +29,6 @@ namespace Desafio2
 
             var result = await JsonSerializer.DeserializeAsync<Result>(stream);
 
-            //throw new HttpRequestException("deu ruim!", null, HttpStatusCode.NotFound);
-
             return result;
         }
 

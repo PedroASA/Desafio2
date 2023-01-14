@@ -17,7 +17,7 @@ namespace Desafio2
          
             set
             {
-                if (value == MoedaDestino)
+                if (value.ToUpper() == MoedaDestino)
                     throw new ArgumentException("Moeda destino e moeda origem devem ser diferentes");
 
                 if (IsValidMoeda(value))
@@ -33,7 +33,7 @@ namespace Desafio2
 
             set
             {
-                if (value == MoedaOrigem)
+                if (value.ToUpper() == MoedaOrigem)
                     throw new ArgumentException("Moeda destino e moeda origem devem ser diferentes");
 
                 if (IsValidMoeda(value))

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,8 +33,8 @@ namespace Desafio2
                     {
                         await processTask;
 
-                        // Esperar método "Load()" terminar
-                        loadTask?.Wait();
+                        //// Esperar método "Load()" terminar
+                        //loadTask?.Wait();
 
                         // Se o método "Process()" não gerar erro, chama o método "Write()"
                         Write();
@@ -45,11 +46,13 @@ namespace Desafio2
                     // Se não for "esperada", cancelar a execução das tarefas
                     catch (Exception e)
                     {
-                        // Esperar método "Load()" terminar
-                        loadTask?.Wait();
+                        //// Esperar método "Load()" terminar
+                        //loadTask?.Wait();
 
-                        Console.WriteLine($"Erro Interno. \nAbortando...");
+                        Console.WriteLine($"Erro Interno. \nAbortando...\nVeja o arquivo erros.txt para mais informações");
+                        Console.SetError(new StreamWriter(@"..\..\..\Desafio2\erros.txt"));
                         Console.Error.WriteLine(e);
+                        Console.Error.Close();
                         break;
                     }
                     finally
