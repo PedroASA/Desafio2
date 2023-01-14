@@ -1,106 +1,78 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Desafio2
 {
+    // Classe que implementa a interação com o usuário
     public class UserInterface
     {
-        private Data _data = new();
+        // mantém os dados relativos à conversão a ser feita
+        private Conversao conversao = new();
 
-        private static readonly string[] messages =
+        // Método Principal
+        public async Task Start()
         {
-            "Moeda origem:",
-            "Moeda destino:",
-            "Valor:"
-        };
 
-        private static readonly Action<Data, string>[] actions =
-        {
-            (data, line) => {data.MoedaOrigem = line; },
-            (data, line) => {data.MoedaDestino = line; },
-            (data, line) => {data.Valor =line; }
-        };
-
-        private static readonly IEnumerable<(string, Action<Data, string>, int)> zippedWithIndex = 
-            messages
-            .Zip(actions)
-            .Select((a, b) => (a.First, a.Second, b));
-
-        // EXCEPTION
-        public void Start()
-        {
-            Task writeTask = null;
             while (true)
             {
-                writeTask?.Wait();
+                // Ler Entradas
                 if (Read())
                 {
+                    // Processar dados lidos
                     var processTask = Process();
 
-                    writeTask = Loading(processTask)
-                        .ContinueWith(_ => 
-                        {
-                            if (!processTask.IsFaulted)
-                            {
-                                Write();
-                            }
-                            _data = new(); 
-                        });
+                    // Imprime no Console enquanto o método "Process()" não acaba
+                    var loadTask = Loading(processTask);
+
+                    try
+                    {
+                        await processTask;
+
+                        // Esperar método "Load()" terminar
+                        loadTask?.Wait();
+
+                        // Se o método "Process()" não gerar erro, chama o método "Write()"
+                        Write();
+
+                    }
+                    // Verifica se exceção gerada é "esperada" (ArgumentException) ou não.
+                    catch (ArgumentException) { }
+
+                    // Se não for "esperada", cancelar a execução das tarefas
+                    catch (Exception e)
+                    {
+                        // Esperar método "Load()" terminar
+                        loadTask?.Wait();
+
+                        Console.WriteLine($"Erro Interno. \nAbortando...");
+                        Console.Error.WriteLine(e);
+                        break;
+                    }
+                    finally
+                    {
+                        conversao = new();
+                    }
                 }
                 else
                     break;
             }
-            //while (true)
-            //{
-            //    if (Read())
-            //    {
-            //        Process();
-            //        Write(); 
-            //        _data = new();
-            //    }
-            //    else
-            //        break;
-            //}
         }
 
-        private bool Read()
-        {
-            string line;
 
-            foreach (var (message, action, index) in zippedWithIndex)
-            {
-                while (true)
-                {
-                    try
-                    {
+        // Lê e valida as entradas do usuário
+        // Retorna falso quando o usuário deseja terminar a interação
+        private bool Read() => ReadMenu.Read(conversao);
 
-                        Console.WriteLine(message);
-                        line = Console.ReadLine();
-                        if (index == 0 && string.IsNullOrEmpty(line))
-                            return false;
-                           
-                        action(_data, line);
 
-                        break;
 
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e.Message);
-                    }
-                }
-            }
-            return true;
-        }
-
-        // TODO: Better Animation
+        // Imprime no Console enquanto a tarefa "until" não acaba
         private static async Task Loading(Task until)
         {
             Console.Write("Executando");
             while (true)
-            { 
+            {
+                // Imprime no Console a cada 100 milisegundos
                 await Task.Delay(100).ContinueWith(_ => Console.Write('.'));
                 if (until.IsCompleted)
                 {
@@ -109,55 +81,38 @@ namespace Desafio2
                 }
             }
         }
+        // Obtem Resultado e Taxa por meio da classe Request
         private async Task Process()
         {
             try
             {
-                Request.Result res = await Request.MakeRequest(_data.MoedaOrigem, _data.MoedaDestino, _data.Valor);
-                // REDO
-                _data.Resultado = res.Resultado?.ToString();
-                _data.Taxa = res.Info.Rate?.ToString();
+                Request.Result res = await Request.MakeRequest(conversao.MoedaOrigem, conversao.MoedaDestino, conversao.Valor);
+                conversao.SetResultado(res.Resultado);
+                conversao.SetTaxa(res.Info.Rate);
             }
+            // Erro Esperado, i.e, o Resultado e/ou a Taxa passadas não são válidos
             catch(ArgumentException e)
             {
-                // TODO
-                Console.WriteLine(e.Message);
+                Console.WriteLine($"Falha ao converter {conversao.Valor} de {conversao.MoedaOrigem} para {conversao.MoedaDestino}\n" + e.Message);
                 throw;
             }
-            catch (Exception e)
+            catch(System.Net.Http.HttpRequestException e)
             {
-                Console.Error.WriteLine(e);
+                Console.WriteLine("Falha ao se comunicar com a API\nCódigo de Resposta HTTP: " + e.StatusCode);
                 throw;
             }
-            return;
-
+            catch(JsonException)
+            {
+                Console.WriteLine("Falha ao ler a resposta da API\nJson não pode ser desserializado");
+                throw;
+            }
         }
 
-        //private void Process()
-        //{
-        //    try
-        //    {
-        //        Request.Result res = Request.MakeRequest(_data.MoedaOrigem, _data.MoedaDestino, _data.Valor).Result;
-        //        _data.Resultado = res.Resultado?.ToString();
-        //        _data.Taxa = res.Info.Rate.ToString();
-        //    }
-        //    catch(ArgumentException e)
-        //    {
-        //        Console.WriteLine(e.Message);
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        Console.Error.WriteLine(e);
-        //        throw;
-        //    }
-        //    return;
-
-        //}
-
+        // Imprime os dados da Conversão
         private void Write()
         {
             string border = new('-', 50);
-            Console.WriteLine($"{border}\n{_data.MoedaOrigem} {_data.Valor} => {_data.MoedaDestino} {_data.Resultado}\nTaxa: {_data.Taxa}\n{border}");
+            Console.WriteLine($"{border}\n{conversao.MoedaOrigem} {Conversao.FormatValor(conversao.Valor)} => {conversao.MoedaDestino} {Conversao.FormatValor(conversao.Resultado)}\nTaxa: {Conversao.FormatTaxa(conversao.Taxa)}\n{border}");
         }
     }
 }

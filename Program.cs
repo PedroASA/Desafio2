@@ -6,7 +6,7 @@ namespace Desafio2
     {
         static void Main(string[] args)
         {
-            new UserInterface().Start();
+            new UserInterface().Start().Wait();
         }
     }
 }

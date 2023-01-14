@@ -3,30 +3,38 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Net;
 
-// GOOD
 namespace Desafio2
 {
+    // Classe responsável por fazer as requisições a API
     public class Request
     {
         private readonly static HttpClient Client;
+        private static readonly string Uri = "https://api.exchangerate.host/convert?";
 
+        private readonly static string[] Params = { "from", "to", "amount" };
+
+        // Construtor de Classe
         static Request()
         {
             Client = new();
             Client.DefaultRequestHeaders.Accept.Clear();
         }
 
-        public static async Task<Result> MakeRequest(string origem, string destino, string valor)
+        public static async Task<Result> MakeRequest(string origem, string destino, float valor)
         {
             await using Stream stream =
-            await Client.GetStreamAsync($"https://api.exchangerate.host/convert?from={origem}&to={destino}&amount={valor}");
+            await Client.GetStreamAsync($"{Uri}{Params[0]}={origem}&{Params[1]}={destino}&{Params[2]}={valor}");
 
             var result = await JsonSerializer.DeserializeAsync<Result>(stream);
+
+            //throw new HttpRequestException("deu ruim!", null, HttpStatusCode.NotFound);
 
             return result;
         }
 
+        // Somente os campos relevantes
         public class Result
         {
             [property: JsonPropertyName("result")] public float? Resultado { get; set; }
