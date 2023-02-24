@@ -33,21 +33,18 @@ namespace Desafio2
                     {
                         await processTask;
 
-                        //// Esperar método "Load()" terminar
-                        //loadTask?.Wait();
-
                         // Se o método "Process()" não gerar erro, chama o método "Write()"
                         Write();
 
                     }
                     // Verifica se exceção gerada é "esperada" (ArgumentException) ou não.
-                    catch (ArgumentException) { }
-
+                    catch (ArgumentException) 
+                    {
+                        Console.Write("");
+                    }
                     // Se não for "esperada", cancelar a execução das tarefas
                     catch (Exception e)
                     {
-                        //// Esperar método "Load()" terminar
-                        //loadTask?.Wait();
 
                         Console.WriteLine($"Erro Interno. \nAbortando...\nVeja o arquivo erros.txt para mais informações");
                         Console.SetError(new StreamWriter(@"..\..\..\Desafio2\erros.txt"));
